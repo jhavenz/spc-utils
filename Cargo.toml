@@ -1,0 +1,19 @@
+[package]
+name = "latest_spc_version"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+reqwest = { version = "0.12", features = ["json", "blocking"] }
+semver = { version = "1.0", features = ["serde"] }
+strum = { version = "0.26", features = ["derive"] }
+clap = { version = "4.5", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+chrono = { version = "0.4.42", features = ["serde"] }
+dirs = "5.0"
+
+
+[lints.rust]
+dead_code = "allow"
+unused_variables = "allow"
