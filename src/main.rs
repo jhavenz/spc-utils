@@ -1,11 +1,13 @@
-use core::panic;
-
+use chrono::{DateTime, Local};
 use clap::{Parser, Subcommand};
+use comfy_table::{Cell, ContentArrangement, Table, presets::UTF8_FULL};
 use semver::Version;
 
 mod spc;
 
 #[derive(Parser)]
+#[command(name = "spc-utils")]
+#[command(about = "CLI tool for managing Static PHP CLI versions")]
 struct Cli {
     #[command(subcommand)]
     command: Commands,
@@ -32,9 +34,13 @@ fn main() {
             let options = spc::ApiOptions::new(category, version, os, arch, build_type);
 
             let api = spc::Api::new(options).with_no_cache(no_cache);
-            let latest_version = api.fetch_latest_version();
+            let (latest_version, from_cache) = api.fetch_latest_version();
 
-            println!("Latest Version: {}", latest_version);
+            if from_cache {
+                println!("Latest Version: {} (cached)", latest_version);
+            } else {
+                println!("Latest Version: {}", latest_version);
+            }
         }
         Commands::CheckUpdate {
             category,
@@ -44,12 +50,20 @@ fn main() {
             let options = spc::ApiOptions::new(category, Some(version.clone()), None, None, None);
 
             let api = spc::Api::new(options).with_no_cache(no_cache);
-            let latest_version = api.fetch_latest_version();
+            let (latest_version, from_cache) = api.fetch_latest_version();
 
+            let cached_marker = if from_cache { " (cached)" } else { "" };
             if version == latest_version {
-                println!("✓ You have the latest version: {}", version);
+                println!(
+                    "✓ You have the latest version: {}{}",
+                    version, cached_marker
+                );
             } else {
-                println!("✗ Update available: {} → {}", version, latest_version);
+                println!(
+                    "✗ Update available: {} → {}{}",
+                    version, latest_version, cached_marker
+                );
+                println!("  {}", api.download_url(&latest_version));
             }
         }
         Commands::Download {
@@ -70,6 +84,88 @@ fn main() {
                 Err(e) => eprintln!("Download failed: {}", e),
             }
         }
+        Commands::Cache { action } => {
+            let cache = spc::Cache::new();
+
+            match action {
+                CacheAction::List => {
+                    let files = cache.list_cached_files();
+
+                    if files.is_empty() {
+                        println!("No cached files found.");
+                        println!("Cache directory: {}", cache.cache_dir().display());
+                        return;
+                    }
+
+                    let mut table = Table::new();
+                    table
+                        .load_preset(UTF8_FULL)
+                        .set_content_arrangement(ContentArrangement::Dynamic)
+                        .set_header(vec![
+                            Cell::new("Category"),
+                            Cell::new("Entries"),
+                            Cell::new("Size"),
+                            Cell::new("Modified"),
+                            Cell::new("Expires"),
+                        ]);
+
+                    for file in &files {
+                        table.add_row(vec![
+                            Cell::new(file.category.to_string()),
+                            Cell::new(file.entry_count.to_string()),
+                            Cell::new(format_size(file.size)),
+                            Cell::new(file.modified.format("%Y-%m-%d %H:%M").to_string()),
+                            Cell::new(format_expires(&file.expires)),
+                        ]);
+                    }
+
+                    println!("{table}");
+                    println!("\nCache directory: {}", cache.cache_dir().display());
+                }
+                CacheAction::Clear { category } => match cache.clear(category.as_ref()) {
+                    Ok(count) => {
+                        if count == 0 {
+                            println!("No cache files to remove.");
+                        } else {
+                            println!("Removed {} cache file(s).", count);
+                        }
+                    }
+                    Err(e) => eprintln!("Failed to clear cache: {}", e),
+                },
+                CacheAction::Path => {
+                    println!("{}", cache.cache_dir().display());
+                }
+            }
+        }
+    }
+}
+
+fn format_size(bytes: u64) -> String {
+    const KB: u64 = 1024;
+    const MB: u64 = KB * 1024;
+
+    if bytes >= MB {
+        format!("{:.1} MB", bytes as f64 / MB as f64)
+    } else if bytes >= KB {
+        format!("{:.1} KB", bytes as f64 / KB as f64)
+    } else {
+        format!("{} B", bytes)
+    }
+}
+
+fn format_expires(expires: &DateTime<Local>) -> String {
+    let now = Local::now();
+    if *expires <= now {
+        "expired".to_string()
+    } else {
+        let duration = *expires - now;
+        let hours = duration.num_hours();
+        let minutes = duration.num_minutes() % 60;
+        if hours > 0 {
+            format!("in {}h {}m", hours, minutes)
+        } else {
+            format!("in {}m", minutes)
+        }
     }
 }
 
@@ -78,11 +174,10 @@ enum Commands {
     #[command(
         about = "Fetch the latest Static PHP CLI version",
         after_help = "Examples:
-        spc-version latest
-        spc-version latest -C bulk
-        spc-version latest -C common -V 8.4
-        spc-version latest --no-cache
-    "
+  spc-utils latest
+  spc-utils latest -C bulk
+  spc-utils latest -C common -V 8.4
+  spc-utils latest --no-cache"
     )]
     Latest {
         #[arg(short = 'C', long, value_enum)]
@@ -106,10 +201,9 @@ enum Commands {
     #[command(
         about = "Check if a given version is the latest",
         after_help = "Examples:
-        spc-version check-update -v 8.4.10
-        spc-version check-update -C common -v 8.4.10
-        spc-version check-update -v 8.4.10 --no-cache
-    "
+  spc-utils check-update -v 8.4.10
+  spc-utils check-update -C common -v 8.4.10
+  spc-utils check-update -v 8.4.10 --no-cache"
     )]
     CheckUpdate {
         #[arg(short = 'C', long, value_enum)]
@@ -124,11 +218,10 @@ enum Commands {
     #[command(
         about = "Download a Static PHP CLI binary",
         after_help = "Examples:
-        spc-version download -o php
-        spc-version download -C bulk -V 8.4.10 -o php
-        spc-version download -C common -V 8.4 -O linux -A x86_64 -o ./php-binary
-        spc-version download --no-cache -o php
-    "
+  spc-utils download -o php
+  spc-utils download -C bulk -V 8.4.10 -o php
+  spc-utils download -C common -V 8.4 -O linux -A x86_64 -o ./php-binary
+  spc-utils download --no-cache -o php"
     )]
     Download {
         #[arg(short = 'C', long, value_enum)]
@@ -152,6 +245,31 @@ enum Commands {
         #[arg(long, help = "Skip cache and fetch fresh data")]
         no_cache: bool,
     },
+    #[command(
+        about = "Manage the local response cache",
+        after_help = "Examples:
+  spc-utils cache list
+  spc-utils cache clear
+  spc-utils cache clear -C bulk
+  spc-utils cache path"
+    )]
+    Cache {
+        #[command(subcommand)]
+        action: CacheAction,
+    },
+}
+
+#[derive(Clone, Subcommand)]
+enum CacheAction {
+    #[command(about = "List all cached files with details")]
+    List,
+    #[command(about = "Clear cached files")]
+    Clear {
+        #[arg(short = 'C', long, value_enum, help = "Clear only a specific category")]
+        category: Option<spc::BuildCategory>,
+    },
+    #[command(about = "Print the cache directory path")]
+    Path,
 }
 
 fn validate_version(input: &str) -> Result<Version, String> {
