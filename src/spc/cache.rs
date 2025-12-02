@@ -7,17 +7,22 @@ use std::{
 
 use super::{BuildCategory, SpcJsonResponse};
 
-pub struct Cache {
-    cache_dir: PathBuf,
-}
-
 pub struct CacheFileInfo {
     pub category: BuildCategory,
-    pub path: PathBuf,
     pub size: u64,
     pub modified: DateTime<Local>,
     pub expires: DateTime<Local>,
     pub entry_count: usize,
+}
+
+pub struct Cache {
+    cache_dir: PathBuf,
+}
+
+impl Default for Cache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Cache {
@@ -101,7 +106,6 @@ impl Cache {
 
                     files.push(CacheFileInfo {
                         category,
-                        path,
                         size: metadata.len(),
                         modified,
                         expires,
@@ -137,11 +141,5 @@ impl Cache {
         }
 
         Ok(removed)
-    }
-}
-
-impl Default for Cache {
-    fn default() -> Self {
-        Self::new()
     }
 }

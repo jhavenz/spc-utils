@@ -177,22 +177,22 @@ fn print_examples() {
         r#"Usage Examples:
 
   Get the latest version:
-    spc-version latest
-    spc-version latest -C common -V 8.4
+    spc-utils latest
+    spc-utils latest -C common -V 8.4
 
   Check for updates:
-    spc-version check-update -v 8.4.10
+    spc-utils check-update -v 8.4.10
 
   Download a binary:
-    spc-version download -o php
-    spc-version download -C bulk -V 8.4 -o ./php-bin
+    spc-utils download -o php
+    spc-utils download -C bulk -V 8.4 -o ./php-bin
 
   Manage cache:
-    spc-version cache list
-    spc-version cache clear
+    spc-utils cache list
+    spc-utils cache clear
 
   Skip cache on any command:
-    spc-version latest --no-cache"#
+    spc-utils latest --no-cache"#
     );
 }
 
@@ -275,10 +275,10 @@ enum Commands {
     #[command(
         about = "Manage the local response cache",
         after_help = "Examples:
-  spc-version cache list
-  spc-version cache clear
-  spc-version cache clear -C bulk
-  spc-version cache path"
+  spc-utils cache list
+  spc-utils cache clear
+  spc-utils cache clear -C bulk
+  spc-utils cache path"
     )]
     Cache {
         #[command(subcommand)]

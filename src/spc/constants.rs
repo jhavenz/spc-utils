@@ -1,3 +1,5 @@
+#![allow(dead_code)]
+
 pub const SPC_OS_OPTIONS: [&str; 3] = ["linux", "windows", "macos"];
 
 pub const SPC_ARCH_OPTIONS: [&str; 2] = ["x86_64", "aarch64"];

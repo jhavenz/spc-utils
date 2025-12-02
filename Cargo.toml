@@ -2,6 +2,14 @@
 name = "spc-utils"
 version = "0.1.0"
 edition = "2024"
+authors = ["Jonathan Havens <mail@jhavens.tech>"]
+description = 'Simple CLI tool for ensuring one is using the latest pre-built PHP binaries offered by the Static PHP CLI ("SPC" - https://github.com/crazywhalecc/static-php-cli) tool'
+license = "MIT"
+repository = "https://github.com/jhavenz/spc-utils"
+homepage = "https://github.com/jhavenz/spc-utils"
+readme = "README.md"
+keywords = ["php", "static-php", "cli", "static-php-cli", "spc"]
+categories = ["command-line-utilities", "development-tools"]
 
 [dependencies]
 reqwest = { version = "0.12", features = ["json", "blocking"] }
@@ -19,6 +27,3 @@ assert_cmd = "2.0"
 predicates = "3.1"
 tempfile = "3.14"
 
-[lints.rust]
-dead_code = "allow"
-unused_variables = "allow"
