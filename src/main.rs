@@ -137,6 +137,9 @@ fn main() {
                 }
             }
         }
+        Commands::Examples => {
+            print_examples();
+        }
     }
 }
 
@@ -167,6 +170,30 @@ fn format_expires(expires: &DateTime<Local>) -> String {
             format!("in {}m", minutes)
         }
     }
+}
+
+fn print_examples() {
+    println!(
+        r#"Usage Examples:
+
+  Get the latest version:
+    spc-version latest
+    spc-version latest -C common -V 8.4
+
+  Check for updates:
+    spc-version check-update -v 8.4.10
+
+  Download a binary:
+    spc-version download -o php
+    spc-version download -C bulk -V 8.4 -o ./php-bin
+
+  Manage cache:
+    spc-version cache list
+    spc-version cache clear
+
+  Skip cache on any command:
+    spc-version latest --no-cache"#
+    );
 }
 
 #[derive(Clone, Subcommand)]
@@ -248,15 +275,17 @@ enum Commands {
     #[command(
         about = "Manage the local response cache",
         after_help = "Examples:
-  spc-utils cache list
-  spc-utils cache clear
-  spc-utils cache clear -C bulk
-  spc-utils cache path"
+  spc-version cache list
+  spc-version cache clear
+  spc-version cache clear -C bulk
+  spc-version cache path"
     )]
     Cache {
         #[command(subcommand)]
         action: CacheAction,
     },
+    #[command(about = "Show usage examples for all commands")]
+    Examples,
 }
 
 #[derive(Clone, Subcommand)]
