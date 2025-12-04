@@ -18,17 +18,16 @@ pub struct SpcJsonResponse {
 
 impl SpcJsonResponse {
     pub fn version(&self) -> Option<Version> {
-        let mut expected_extensions = [".tar.gz", ".zip"].iter();
+        let expected_extensions = [".tar.gz", ".zip"];
 
-        if !expected_extensions.any(|ext| self.name.ends_with(ext)) {
+        if !expected_extensions
+            .iter()
+            .any(|ext| self.name.ends_with(ext))
+        {
             return None;
         }
 
-        let name_segments = self.name.split("-").collect::<Vec<&str>>();
-
-        let version_str = name_segments
-            .get(1)
-            .expect(format!("No version string found in name: {}", self.name).as_str());
+        let version_str = self.name.split('-').nth(1)?;
 
         Version::parse(version_str).ok()
     }

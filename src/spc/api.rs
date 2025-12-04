@@ -145,7 +145,7 @@ impl Api {
         let version_bound = self.options.version_bound();
 
         let (data, from_cache) = self.fetch_versions().unwrap();
-        let versions = data
+        let latest_version = data
             .into_iter()
             .filter(|resp| {
                 let version_match = if let Some(v) = resp.version() {
@@ -171,26 +171,22 @@ impl Api {
 
                 version_match && name_match
             })
-            .filter_map(|resp| resp.version());
+            .filter_map(|resp| resp.version())
+            .max()
+            .expect("No spc versions found after fetching");
 
-        let mut highest_version = Version::parse("0.0.0").unwrap();
-        for resp_version in versions {
-            if highest_version < resp_version {
-                highest_version = resp_version.clone();
-            }
-        }
-
-        (highest_version, from_cache)
+        (latest_version, from_cache)
     }
 
     pub fn fetch_versions(&self) -> Result<(Vec<SpcJsonResponse>, bool), reqwest::Error> {
         let category = self.options.category();
         let cache = Cache::new();
 
-        if !self.no_cache && cache.is_valid(&category) {
-            if let Some(cached_data) = cache.read(&category) {
-                return Ok((cached_data, true));
-            }
+        if !self.no_cache
+            && cache.is_valid(&category)
+            && let Some(cached_data) = cache.read(&category)
+        {
+            return Ok((cached_data, true));
         }
 
         let url = self.options.to_url(&self.base_url);
