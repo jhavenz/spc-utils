@@ -17,6 +17,7 @@ pub struct CacheFileInfo {
     pub entry_count: usize,
 }
 
+#[derive(Clone)]
 pub struct Cache {
     cache_dir: PathBuf,
 }

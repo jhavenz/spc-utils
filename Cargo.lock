@@ -1225,7 +1225,7 @@ dependencies = [
 
 [[package]]
 name = "spc-utils"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "assert_cmd",
  "chrono",

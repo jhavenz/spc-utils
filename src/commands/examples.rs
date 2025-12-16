@@ -1,4 +1,4 @@
-pub fn run_examples() {
+pub fn run() {
     println!(
         r#"Usage Examples:
 

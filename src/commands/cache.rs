@@ -1,8 +1,8 @@
 use chrono::{DateTime, Local};
 use clap::Subcommand;
-use comfy_table::{presets::UTF8_FULL, Cell, ContentArrangement, Table};
+use comfy_table::{Cell, ContentArrangement, Table, presets::UTF8_FULL};
 
-use crate::spc::{BuildCategory, Cache};
+use crate::{AppContext, spc::BuildCategory};
 
 #[derive(Clone, Subcommand)]
 pub enum CacheAction {
@@ -17,8 +17,8 @@ pub enum CacheAction {
     Path,
 }
 
-pub fn run_cache(action: CacheAction) {
-    let cache = Cache::new();
+pub fn run(ctx: &AppContext, action: CacheAction) {
+    let cache = &ctx.cache;
 
     match action {
         CacheAction::List => {

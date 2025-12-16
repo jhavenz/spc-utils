@@ -1,6 +1,6 @@
 [package]
 name = "spc-utils"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2024"
 authors = ["Jonathan Havens <mail@jhavens.tech>"]
 description = 'Simple CLI tool for reading and downloading pre-built PHP binaries using the Static PHP CLI (https://github.com/crazywhalecc/static-php-cli) tool'

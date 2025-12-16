@@ -1,18 +1,16 @@
-use semver::Version;
+use crate::{AppContext, cli::DownloadArgs, spc::{Api, ApiOptions}};
 
-use crate::spc::{Api, ApiOptions, BuildCategory};
+pub fn run(ctx: &AppContext, args: DownloadArgs) {
+    let options = ApiOptions::new(
+        args.category,
+        args.version,
+        args.os,
+        args.arch,
+        args.build_type,
+    );
 
-pub fn run_download(
-    category: Option<BuildCategory>,
-    version: Option<Version>,
-    os: Option<String>,
-    arch: Option<String>,
-    build_type: Option<String>,
-    output: String,
-    no_cache: bool,
-) {
-    let options = ApiOptions::new(category, version, os, arch, build_type);
-    let api = Api::new(options).with_no_cache(no_cache);
+    let output = args.output;
+    let api = Api::new(ctx.cache.clone(), options).with_no_cache(args.no_cache);
 
     match api.download(&output) {
         Ok(()) => println!("Download complete!"),

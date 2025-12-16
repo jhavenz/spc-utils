@@ -80,7 +80,7 @@ impl ApiOptions {
         }
     }
 
-    fn arch(&self) -> String {
+    pub fn arch(&self) -> String {
         self.arch.clone().unwrap_or_else(|| match ARCH {
             "x86_64" | "x86" => "x86_64".to_string(),
             "aarch64" | "arm" => "aarch64".to_string(),
@@ -88,7 +88,7 @@ impl ApiOptions {
         })
     }
 
-    fn build_type(&self) -> String {
+    pub fn build_type(&self) -> String {
         self.build_type.clone().unwrap_or_else(|| "cli".to_string())
     }
 
@@ -96,7 +96,7 @@ impl ApiOptions {
         self.version.as_ref()
     }
 
-    fn os(&self) -> String {
+    pub fn os(&self) -> String {
         self.os.clone().unwrap_or_else(|| match OS {
             "linux" => "linux".to_string(),
             "macos" => "macos".to_string(),
@@ -120,15 +120,17 @@ pub struct Api {
     client: blocking::Client,
     base_url: String,
     options: ApiOptions,
+    cache: Cache,
     no_cache: bool,
 }
 
 impl Api {
-    pub fn new(options: ApiOptions) -> Self {
+    pub fn new(cache: Cache, options: ApiOptions) -> Self {
         Self {
             options,
             client: blocking::Client::new(),
             base_url: "https://dl.static-php.dev/static-php-cli".to_string(),
+            cache,
             no_cache: false,
         }
     }
@@ -180,11 +182,10 @@ impl Api {
 
     pub fn fetch_versions(&self) -> Result<(Vec<SpcJsonResponse>, bool), reqwest::Error> {
         let category = self.options.category();
-        let cache = Cache::new();
 
         if !self.no_cache
-            && cache.is_valid(&category)
-            && let Some(cached_data) = cache.read(&category)
+            && self.cache.is_valid(&category)
+            && let Some(cached_data) = self.cache.read(&category)
         {
             return Ok((cached_data, true));
         }
@@ -193,7 +194,7 @@ impl Api {
         let response = self.client.get(url).send()?;
         let data: Vec<SpcJsonResponse> = response.json()?;
 
-        if let Err(e) = cache.write(&category, &data) {
+        if let Err(e) = self.cache.write(&category, &data) {
             eprintln!("Warning: Failed to write cache: {}", e);
         }
 
